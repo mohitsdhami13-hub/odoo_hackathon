@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { auth } from '@/lib/auth';
+import { auth } from '@/auth';
 import OrgSetupTabs from '@/components/admin/OrgSetupTabs';
 
 export const metadata = {
@@ -9,9 +9,6 @@ export const metadata = {
 export default async function OrgSetupPage() {
   const session = await auth();
 
-  // Defense in depth: middleware should already block non-admins from this
-  // route, but the page checks again server-side rather than trusting only
-  // the client-rendered tabs.
   if (!session || session.user.role !== 'ADMIN') {
     redirect('/dashboard');
   }

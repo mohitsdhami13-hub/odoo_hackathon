@@ -10,7 +10,15 @@ export default function ThemeToggle() {
   useEffect(() => setMounted(true), []);
 
   if (!mounted) {
-    return <div className="h-9 w-9 rounded-md border border-slate-200 bg-white" />; // Placeholder
+    return (
+      <button
+        className="flex h-9 w-9 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-500 transition-colors"
+        disabled
+        aria-hidden="true"
+      >
+        <div className="h-5 w-5" />
+      </button>
+    );
   }
 
   const currentTheme = theme === 'system' ? resolvedTheme : theme;

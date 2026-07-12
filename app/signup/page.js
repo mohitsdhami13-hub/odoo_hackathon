@@ -3,6 +3,7 @@
 import { useState, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import ThemeToggle from '@/components/ThemeToggle';
 import { signIn } from 'next-auth/react';
 
 function SignupForm() {
@@ -133,7 +134,10 @@ function SignupForm() {
 
 export default function SignupPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
+    <div className="flex min-h-screen items-center justify-center px-4 relative">
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="mb-8 flex flex-col items-center">

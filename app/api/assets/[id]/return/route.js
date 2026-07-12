@@ -2,6 +2,7 @@ import { prisma } from '@/lib/db';
 import { auth } from '@/auth';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { logActivity } from '@/lib/logActivity';
 
 const WRITE_ROLES = ['ADMIN', 'ASSET_MANAGER'];
 
@@ -48,7 +49,16 @@ export async function POST(req, { params }) {
       where: { id: assetId },
       data: { status: 'AVAILABLE' },
     });
+    
+    return allocation;
   });
 
-  return NextResponse.json({ success: true });
+  await logActivity({
+    action: 'RETURNED',
+    assetId,
+    userId: session.user.id,
+    details: parsed.success && parsed.data.conditionOnReturn ? `Condition: ${parsed.data.conditionOnReturn}` : 'Returned in good condition',
+  });
+
+  return NextResponse.json({ data: result });
 }

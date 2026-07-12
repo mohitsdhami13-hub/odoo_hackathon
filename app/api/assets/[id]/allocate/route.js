@@ -2,6 +2,7 @@ import { prisma } from '@/lib/db';
 import { auth } from '@/auth';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { logActivity } from '@/lib/logActivity';
 
 const WRITE_ROLES = ['ADMIN', 'ASSET_MANAGER'];
 
@@ -83,6 +84,14 @@ export async function POST(req, { params }) {
     });
 
     return allocation;
+  });
+
+  const holder = result.employee?.name || result.department?.name || 'Unknown';
+  await logActivity({
+    action: 'ALLOCATED',
+    assetId,
+    userId: session.user.id,
+    details: `Allocated to ${holder}`,
   });
 
   return NextResponse.json({ data: result }, { status: 201 });

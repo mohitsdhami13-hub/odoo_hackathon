@@ -2,6 +2,7 @@ import { prisma } from '@/lib/db';
 import { auth } from '@/auth';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { logActivity } from '@/lib/logActivity';
 
 const transferSchema = z.object({
   toEmployeeId: z.string().cuid().optional(),
@@ -48,6 +49,13 @@ export async function POST(req, { params }) {
       toEmployeeId: parsed.data.toEmployeeId ?? null,
       status: 'PENDING',
     },
+  });
+
+  await logActivity({
+    action: 'TRANSFER_REQUESTED',
+    assetId,
+    userId: session.user.id,
+    details: `Transfer requested for asset`,
   });
 
   return NextResponse.json({ data: transfer }, { status: 201 });

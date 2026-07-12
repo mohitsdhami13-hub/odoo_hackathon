@@ -53,6 +53,18 @@ enum MaintenanceStatus {
   RESOLVED
 }
 
+enum AuditStatus {
+  OPEN
+  CLOSED
+}
+
+enum AuditItemStatus {
+  UNVERIFIED
+  VERIFIED
+  MISSING
+  DAMAGED
+}
+
 model User {
   id           String      @id @default(cuid())
   name         String
@@ -69,6 +81,8 @@ model User {
   bookings            Booking[]
   maintenanceRequests MaintenanceRequest[]  @relation("RaisedBy")
   notifications       Notification[]
+  activityLogs        ActivityLog[]
+  createdAudits       AuditCycle[]          @relation("CreatedAudits")
 }
 
 model Department {
@@ -81,6 +95,7 @@ model Department {
 
   employees User[]       @relation("DeptEmployees")
   assets    Allocation[] @relation("DepartmentAllocations")
+  audits    AuditCycle[]
 }
 
 model AssetCategory {
@@ -109,6 +124,8 @@ model Asset {
   transferRequests    TransferRequest[]
   bookings            Booking[]
   maintenanceRequests MaintenanceRequest[]
+  activityLogs        ActivityLog[]
+  auditItems          AuditItem[]
 }
 
 model Allocation {
@@ -169,4 +186,39 @@ model Notification {
   message   String
   isRead    Boolean  @default(false)
   createdAt DateTime @default(now())
+}
+
+model ActivityLog {
+  id        String   @id @default(cuid())
+  action    String   // e.g. "ALLOCATED", "MAINTENANCE_APPROVED"
+  assetId   String?  // Optional relation to an asset
+  asset     Asset?   @relation(fields: [assetId], references: [id])
+  userId    String?  // Who performed the action
+  user      User?    @relation(fields: [userId], references: [id])
+  details   String?  // Extra metadata like "Transferred to Priya"
+  createdAt DateTime @default(now())
+}
+
+model AuditCycle {
+  id           String      @id @default(cuid())
+  name         String
+  startDate    DateTime    @default(now())
+  endDate      DateTime?
+  status       AuditStatus @default(OPEN)
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id])
+  createdBy    String
+  creator      User        @relation("CreatedAudits", fields: [createdBy], references: [id])
+  items        AuditItem[]
+}
+
+model AuditItem {
+  id           String          @id @default(cuid())
+  auditId      String
+  audit        AuditCycle      @relation(fields: [auditId], references: [id], onDelete: Cascade)
+  assetId      String
+  asset        Asset           @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  status       AuditItemStatus @default(UNVERIFIED)
+  notes        String?
+  updatedAt    DateTime        @updatedAt
 }

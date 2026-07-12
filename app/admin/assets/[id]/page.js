@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/db';
 import AllocatePanel from '@/components/assets/AllocatePanel';
+import BookingPanel from '@/components/assets/BookingPanel';
+import MaintenancePanel from '@/components/assets/MaintenancePanel';
 
 const STATUS_LABELS = {
   AVAILABLE: 'Available',
@@ -163,9 +165,11 @@ export default async function AssetDetailPage({ params }) {
           </div>
         </div>
 
-        {/* ── Right: AllocatePanel ────────────────────────────────────── */}
-        <div className="lg:col-span-1">
+        {/* ── Right: Panels ───────────────────── */}
+        <div className="lg:col-span-1 space-y-4">
           <AllocatePanel asset={serialisedAsset} userRole={session.user.role} />
+          <BookingPanel asset={serialisedAsset} userId={session.user.id} />
+          <MaintenancePanel asset={serialisedAsset} userRole={session.user.role} />
         </div>
       </div>
     </div>

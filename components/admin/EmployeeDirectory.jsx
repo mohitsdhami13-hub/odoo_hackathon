@@ -16,7 +16,7 @@ const ROLE_LABELS = {
 export default function EmployeeDirectory() {
   const { data: session } = useSession();
   const { data: employees, isLoading, isError } = useEmployees();
-  const { data: departments } = useDepartments();
+  const { data: departments } = useDepartments(true);
   const promoteEmployee = usePromoteEmployee();
   const assignDepartment = useAssignDepartment();
 

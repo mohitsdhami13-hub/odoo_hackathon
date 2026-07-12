@@ -16,6 +16,8 @@ export default function DepartmentManager() {
   const createDepartment = useCreateDepartment();
   const updateDepartment = useUpdateDepartment();
 
+  const activeEmployees = employees?.filter((emp) => emp.isActive);
+
   const {
     register,
     handleSubmit,
@@ -75,7 +77,7 @@ export default function DepartmentManager() {
             className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
           >
             <option value="">Unassigned</option>
-            {employees?.map((emp) => (
+            {activeEmployees?.map((emp) => (
               <option key={emp.id} value={emp.id}>
                 {emp.name}
               </option>
@@ -137,7 +139,7 @@ export default function DepartmentManager() {
                     className="rounded-md border border-slate-300 px-2 py-1 text-sm"
                   >
                     <option value="">Unassigned</option>
-                    {employees?.map((emp) => (
+                    {activeEmployees?.map((emp) => (
                       <option key={emp.id} value={emp.id}>
                         {emp.name}
                       </option>

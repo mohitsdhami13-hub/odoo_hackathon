@@ -3,38 +3,56 @@ import { auth } from "@/auth";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-const departmentSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters").max(100),
-  headId: z.string().optional(),
+const updateSchema = z.object({
+  name: z.string().min(2).max(100).optional(),
+  headId: z.string().nullable().optional(),
+  isActive: z.boolean().optional(),
 });
 
-export async function GET(req) {
-  const activeOnly = req.nextUrl.searchParams.get("active") === "true";
-  const departments = await prisma.department.findMany({
-    where: activeOnly ? { isActive: true } : undefined,
-    include: { head: { select: { id: true, name: true, email: true } } },
-    orderBy: { name: "asc" },
-  });
-  return NextResponse.json({ data: departments });
-}
-
-export async function POST(req) {
+export async function PATCH(req, { params }) {
   const session = await auth();
   if (!session || session.user.role !== "ADMIN") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const body = await req.json();
-  const parsed = departmentSchema.safeParse(body);
+  const parsed = updateSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const existing = await prisma.department.findUnique({ where: { name: parsed.data.name } });
-  if (existing) {
-    return NextResponse.json({ error: "A department with this name already exists" }, { status: 409 });
+  const { headId } = parsed.data;
+
+  // Assigning a head: validate the user, and sync role + department so
+  // "head of X" and "role: DEPARTMENT_HEAD" don't drift apart.
+  if (headId) {
+    const headUser = await prisma.user.findUnique({ where: { id: headId } });
+    if (!headUser) {
+      return NextResponse.json({ error: "Selected head not found" }, { status: 404 });
+    }
+    if (headUser.role === "ADMIN") {
+      return NextResponse.json(
+        { error: "An admin can't be set as a department head" },
+        { status: 400 }
+      );
+    }
   }
 
-  const department = await prisma.department.create({ data: parsed.data });
-  return NextResponse.json({ data: department }, { status: 201 });
+  const updated = await prisma.$transaction(async (tx) => {
+    const department = await tx.department.update({
+      where: { id: params.id },
+      data: parsed.data,
+    });
+
+    if (headId) {
+      await tx.user.update({
+        where: { id: headId },
+        data: { role: "DEPARTMENT_HEAD", departmentId: department.id },
+      });
+    }
+
+    return department;
+  });
+
+  return NextResponse.json({ data: updated });
 }

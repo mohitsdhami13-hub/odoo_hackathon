@@ -6,27 +6,167 @@ datasource db {
   provider = "postgresql"
 }
 
-model User {
-  id        String   @id @default(cuid())
-  name      String?
-  email     String   @unique
-  password  String
-  role      Role     @default(USER)
-  items     Item[]
-  createdAt DateTime @default(now())
-}
-
 enum Role {
-  USER
+  EMPLOYEE
+  DEPARTMENT_HEAD
+  ASSET_MANAGER
   ADMIN
 }
 
-model Item {
-  id          String   @id @default(cuid())
-  title       String
-  description String
-  owner       User     @relation(fields: [ownerId], references: [id])
-  ownerId     String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+enum AssetStatus {
+  AVAILABLE
+  ALLOCATED
+  RESERVED
+  UNDER_MAINTENANCE
+  RETIRED
+}
+
+enum AllocationStatus {
+  ACTIVE
+  RETURNED
+}
+
+enum TransferStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum BookingStatus {
+  UPCOMING
+  ONGOING
+  COMPLETED
+  CANCELLED
+}
+
+enum MaintenancePriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum MaintenanceStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  IN_PROGRESS
+  RESOLVED
+}
+
+model User {
+  id           String      @id @default(cuid())
+  name         String
+  email        String      @unique
+  password     String
+  role         Role        @default(EMPLOYEE)
+  department   Department? @relation("DeptEmployees", fields: [departmentId], references: [id])
+  departmentId String?
+  isActive     Boolean     @default(true)
+  createdAt    DateTime    @default(now())
+
+  headOfDepartment    Department[]          @relation("DeptHead")
+  allocations         Allocation[]          @relation("EmployeeAllocations")
+  bookings            Booking[]
+  maintenanceRequests MaintenanceRequest[]  @relation("RaisedBy")
+  notifications       Notification[]
+}
+
+model Department {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  head      User?    @relation("DeptHead", fields: [headId], references: [id])
+  headId    String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  employees User[]       @relation("DeptEmployees")
+  assets    Allocation[] @relation("DepartmentAllocations")
+}
+
+model AssetCategory {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  assets    Asset[]
+}
+
+model Asset {
+  id              String        @id @default(cuid())
+  assetTag        String        @unique
+  name            String
+  category        AssetCategory @relation(fields: [categoryId], references: [id])
+  categoryId      String
+  serialNumber    String?
+  acquisitionDate DateTime?
+  acquisitionCost Float?
+  condition       String?
+  location        String?
+  isBookable      Boolean       @default(false)
+  status          AssetStatus   @default(AVAILABLE)
+  createdAt       DateTime      @default(now())
+
+  allocations         Allocation[]
+  transferRequests    TransferRequest[]
+  bookings            Booking[]
+  maintenanceRequests MaintenanceRequest[]
+}
+
+model Allocation {
+  id                 String           @id @default(cuid())
+  asset              Asset            @relation(fields: [assetId], references: [id])
+  assetId            String
+  employee           User?            @relation("EmployeeAllocations", fields: [employeeId], references: [id])
+  employeeId         String?
+  department         Department?      @relation("DepartmentAllocations", fields: [departmentId], references: [id])
+  departmentId       String?
+  status             AllocationStatus @default(ACTIVE)
+  allocatedAt        DateTime         @default(now())
+  expectedReturnDate DateTime?
+  returnedAt         DateTime?
+  conditionOnReturn  String?
+}
+
+model TransferRequest {
+  id            String         @id @default(cuid())
+  asset         Asset          @relation(fields: [assetId], references: [id])
+  assetId       String
+  requestedById String
+  toEmployeeId  String?
+  status        TransferStatus @default(PENDING)
+  requestedAt   DateTime       @default(now())
+  resolvedAt    DateTime?
+}
+
+model Booking {
+  id         String        @id @default(cuid())
+  asset      Asset         @relation(fields: [assetId], references: [id])
+  assetId    String
+  bookedBy   User          @relation(fields: [bookedById], references: [id])
+  bookedById String
+  startTime  DateTime
+  endTime    DateTime
+  status     BookingStatus @default(UPCOMING)
+  createdAt  DateTime      @default(now())
+}
+
+model MaintenanceRequest {
+  id         String              @id @default(cuid())
+  asset      Asset               @relation(fields: [assetId], references: [id])
+  assetId    String
+  raisedBy   User                @relation("RaisedBy", fields: [raisedById], references: [id])
+  raisedById String
+  issue      String
+  priority   MaintenancePriority @default(MEDIUM)
+  status     MaintenanceStatus   @default(PENDING)
+  createdAt  DateTime            @default(now())
+  resolvedAt DateTime?
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
 }

@@ -8,6 +8,7 @@ const updateSchema = z.object({
 });
 
 export async function PATCH(req, { params }) {
+  const { id } = await params;
   const session = await auth();
   if (!session || session.user.role !== "ADMIN") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -20,12 +21,12 @@ export async function PATCH(req, { params }) {
   }
 
   const existing = await prisma.assetCategory.findUnique({ where: { name: parsed.data.name } });
-  if (existing && existing.id !== params.id) {
-    return NextResponse.json({ error: "A category with this name already exists" }, { status: 409 });
+  if (existing && existing.id !== id) {
+    return NextResponse.json({ error: "Category name already exists" }, { status: 409 });
   }
 
   const updated = await prisma.assetCategory.update({
-    where: { id: params.id },
+    where: { id },
     data: parsed.data,
   });
 
@@ -33,12 +34,13 @@ export async function PATCH(req, { params }) {
 }
 
 export async function DELETE(req, { params }) {
+  const { id } = await params;
   const session = await auth();
   if (!session || session.user.role !== "ADMIN") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const inUse = await prisma.asset.count({ where: { categoryId: params.id } });
+  const inUse = await prisma.asset.count({ where: { categoryId: id } });
   if (inUse > 0) {
     return NextResponse.json(
       { error: `Cannot delete — ${inUse} asset(s) still use this category` },
@@ -46,6 +48,6 @@ export async function DELETE(req, { params }) {
     );
   }
 
-  await prisma.assetCategory.delete({ where: { id: params.id } });
-  return NextResponse.json({ data: { id: params.id } });
+  await prisma.assetCategory.delete({ where: { id } });
+  return NextResponse.json({ data: { id } });
 }

@@ -2,6 +2,8 @@ import { prisma } from '@/lib/db';
 import { auth } from '@/auth';
 import { NextResponse } from 'next/server';
 
+import { logActivity } from '@/lib/logActivity';
+
 const MANAGER_ROLES = ['ADMIN', 'ASSET_MANAGER'];
 
 // PATCH /api/maintenance/[id]  — approve | reject | resolve
@@ -73,6 +75,13 @@ export async function PATCH(req, { params }) {
     }
 
     return updated;
+  });
+
+  await logActivity({
+    action: `MAINTENANCE_${action}`,
+    assetId: request.assetId,
+    userId: session.user.id,
+    details: `Maintenance request was ${action.toLowerCase()}`,
   });
 
   return NextResponse.json({ data: result });

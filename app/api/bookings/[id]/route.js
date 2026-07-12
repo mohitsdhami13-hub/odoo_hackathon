@@ -2,6 +2,8 @@ import { prisma } from '@/lib/db';
 import { auth } from '@/auth';
 import { NextResponse } from 'next/server';
 
+import { logActivity } from '@/lib/logActivity';
+
 // PATCH /api/bookings/[id]  — cancel a booking
 export async function PATCH(req, { params }) {
   const session = await auth();
@@ -37,6 +39,13 @@ export async function PATCH(req, { params }) {
   const updated = await prisma.booking.update({
     where: { id },
     data: { status: 'CANCELLED' },
+  });
+
+  await logActivity({
+    action: 'BOOKING_CANCELLED',
+    assetId: booking.assetId,
+    userId: session.user.id,
+    details: 'Booking was cancelled',
   });
 
   return NextResponse.json({ data: updated });

@@ -85,7 +85,7 @@ export async function POST(req) {
     try {
       const asset = await prisma.$transaction(async (tx) => {
         const assetTag = await generateAssetTag(tx);
-        return tx.asset.create({
+        const newAsset = await tx.asset.create({
           data: {
             ...rest,
             assetTag,
@@ -95,6 +95,17 @@ export async function POST(req) {
           },
           include: { category: { select: { id: true, name: true } } },
         });
+
+        await tx.activityLog.create({
+          data: {
+            action: 'ASSET_REGISTERED',
+            assetId: newAsset.id,
+            userId: session.user.id,
+            details: `Registered new asset: ${newAsset.name}`
+          }
+        });
+
+        return newAsset;
       });
       return NextResponse.json({ data: asset }, { status: 201 });
     } catch (err) {

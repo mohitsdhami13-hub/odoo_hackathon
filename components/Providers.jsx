@@ -10,12 +10,12 @@ export default function Providers({ children }) {
   const [queryClient] = useState(() => new QueryClient());
 
   return (
-    <SessionProvider>
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <SessionProvider>
+        <QueryClientProvider client={queryClient}>
           {children}
-        </ThemeProvider>
-      </QueryClientProvider>
-    </SessionProvider>
+        </QueryClientProvider>
+      </SessionProvider>
+    </ThemeProvider>
   );
 }

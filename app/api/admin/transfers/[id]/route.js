@@ -2,6 +2,9 @@ import { prisma } from '@/lib/db';
 import { auth } from '@/auth';
 import { NextResponse } from 'next/server';
 
+import { z } from 'zod';
+import { logActivity } from '@/lib/logActivity';
+
 const WRITE_ROLES = ['ADMIN', 'ASSET_MANAGER'];
 
 // PATCH /api/admin/transfers/[id]  — approve or reject a transfer request
@@ -30,6 +33,14 @@ export async function PATCH(req, { params }) {
       where: { id: transferId },
       data: { status: 'REJECTED', resolvedAt: new Date() },
     });
+
+    await logActivity({
+      action: 'TRANSFER_REJECTED',
+      assetId: transfer.assetId,
+      userId: session.user.id,
+      details: 'Transfer request was rejected',
+    });
+
     return NextResponse.json({ data: updated });
   }
 
@@ -62,6 +73,13 @@ export async function PATCH(req, { params }) {
 
     // Asset stays ALLOCATED (it still has an active allocation)
     return newAllocation;
+  });
+
+  await logActivity({
+    action: 'TRANSFER_APPROVED',
+    assetId: transfer.assetId,
+    userId: session.user.id,
+    details: `Transfer approved to ${result.employee?.name || result.department?.name || 'Unknown'}`,
   });
 
   return NextResponse.json({ data: result });

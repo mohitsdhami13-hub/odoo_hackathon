@@ -6,13 +6,14 @@ import { assetUpdateSchema } from "@/lib/validations/asset";
 const WRITE_ROLES = ["ADMIN", "ASSET_MANAGER"];
 
 export async function GET(req, { params }) {
+  const { id } = await params;
   const session = await auth();
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const asset = await prisma.asset.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: {
       category: { select: { id: true, name: true } },
       allocations: {
@@ -33,6 +34,7 @@ export async function GET(req, { params }) {
 }
 
 export async function PATCH(req, { params }) {
+  const { id } = await params;
   const session = await auth();
   if (!session || !WRITE_ROLES.includes(session.user.role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -54,7 +56,7 @@ export async function PATCH(req, { params }) {
   const { serialNumber, condition, location, ...rest } = parsed.data;
 
   const updated = await prisma.asset.update({
-    where: { id: params.id },
+    where: { id },
     data: {
       ...rest,
       ...(serialNumber !== undefined ? { serialNumber: serialNumber || null } : {}),

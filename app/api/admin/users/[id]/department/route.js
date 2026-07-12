@@ -8,6 +8,7 @@ const assignDepartmentSchema = z.object({
 });
 
 export async function PATCH(req, { params }) {
+  const { id } = await params;
   const session = await auth();
   if (!session || session.user.role !== "ADMIN") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -19,7 +20,7 @@ export async function PATCH(req, { params }) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const targetUser = await prisma.user.findUnique({ where: { id: params.id } });
+  const targetUser = await prisma.user.findUnique({ where: { id } });
   if (!targetUser) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
@@ -35,7 +36,7 @@ export async function PATCH(req, { params }) {
   }
 
   const updated = await prisma.user.update({
-    where: { id: params.id },
+    where: { id },
     data: { departmentId: parsed.data.departmentId },
     select: { id: true, name: true, email: true, role: true, departmentId: true },
   });

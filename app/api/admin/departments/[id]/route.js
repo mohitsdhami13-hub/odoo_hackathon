@@ -10,6 +10,7 @@ const updateSchema = z.object({
 });
 
 export async function PATCH(req, { params }) {
+  const { id } = await params;
   const session = await auth();
   if (!session || session.user.role !== "ADMIN") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -22,7 +23,7 @@ export async function PATCH(req, { params }) {
   }
 
   const updated = await prisma.department.update({
-    where: { id: params.id },
+    where: { id },
     data: parsed.data,
   });
 

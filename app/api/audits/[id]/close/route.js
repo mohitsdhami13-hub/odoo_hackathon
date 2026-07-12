@@ -9,7 +9,7 @@ export async function POST(request, { params }) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
-    const { id } = params;
+    const { id } = await params;
 
     const auditCycle = await prisma.auditCycle.findUnique({
       where: { id },

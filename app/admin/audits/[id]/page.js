@@ -14,7 +14,7 @@ export default async function AuditExecutionPage({ params }) {
     redirect('/admin/assets');
   }
 
-  const { id } = params;
+  const { id } = await params;
 
   const audit = await prisma.auditCycle.findUnique({
     where: { id },
